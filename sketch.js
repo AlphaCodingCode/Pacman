@@ -26,6 +26,7 @@ let worldMap = [
 ];
 
 let player;
+let ghosts = [];
 
 function preload() {
     tileset = new Tileset("imgs/pacman_tileset.png", 32, 32, tileNames);
@@ -35,35 +36,29 @@ function preload() {
 function setup() {
     createCanvas(21 * 32, 21 * 32);
     player = new Pacman(13, 9);
+    ghosts.push(new Ghost(13, 6, color(200, 0, 0)));
 }
 
 /*
     The draw function is executed once per frame.
 */
 function draw() {
-    frameRate(60);
     // Update
     player.update();
+    ghosts[0].update();
     // Render
     //background(0);
     tileset.displayMap();
     player.render();
-    fill(255, 255, 255);
-    stroke(0);
-    textAlign(CENTER);
-    textSize(20);
-    let row = round(mouseY / tileset.tileH);
-    let col = round(mouseX / tileset.tileW);
-    text("(" + tileset.map[row][col].x + "," + tileset.map[row][col].y + ")", mouseX, mouseY);
-    noFill();
-    stroke(255, 0, 0);
-    rect(col * tileset.tileW, row * tileset.tileH, 32, 32);
+    ghosts[0].render();
+
 }
 
 function mouseClicked() {
-    tileset.handleClick();
+    //tileset.handleClick();
+    loop();
 }
 
 function mouseDragged() {
-    tileset.handleDrag();
+    //tileset.handleDrag();
 }
