@@ -12,6 +12,8 @@ class Ghost {
         this.mode = "scatter";
         this.possibleModes = ["scatter", "chase", "frightened"];
         this.stateCD = 60 * 3;
+        this.vulnerable = false;
+        this.vulnerableTimer = 5 * 60;
     }
 
     randomPathAI() {
@@ -20,6 +22,7 @@ class Ghost {
         let dirs = ["up", "down", "left", "right"];
         for (let i = 0; i < dirs.length; i++) {
             let tile = this.getTileInDir(dirs[i]);
+            console.log(tile);
             if (tileset.map[tile.r][tile.c].name != "brick")
                 openSpaces.push(dirs[i]);
         }
@@ -32,6 +35,20 @@ class Ghost {
             let rand = round(random(0, openSpaces.length - 1));
             this.dir = openSpaces[rand];
             this.path = this.getTileInDir(rand);
+        }
+    }
+
+    stateUpdate() {
+        if (this.stateCD <= 0) {
+            if (this.mode == "scatter") {
+                this.mode = "chase";
+                this.stateCD = random(2, 6) * 60;
+
+            }
+            else if (this.mode == "chase") {
+                this.mode = "scatter";
+                this.stateCD = random(1, 3) * 60;
+            }
         }
     }
 
@@ -90,7 +107,7 @@ class Ghost {
         return false;
     }
 
-    updateNewTileEntered() {
+    newTileEntered() {
         if (this.takePortal())
             return;
 
@@ -134,46 +151,83 @@ class Ghost {
     }
 
     update() {
-        updateFeetDir();
+        this.updateFeetDir();
+        this.vulnerableTimer--;
         // ghost has reached a new tile's center
-        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0))
-            this.updateNewTileEntered();
+        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+            if (this.vulnerableTimer <= 0) {
+                this.vulnerable = false;
+                this.vulnerableTimer = 5 * 60;
+                this.path = [];
+            }
+            this.newTileEntered();
+        }
+    }
+
+    mouth(size) {
+        // mouth zig-zag
+        stroke(255);
+        let x = this.x + 7;
+        let y = this.y + 18;
+        line(x + size * 0, y + 0, x + size, y + size);
+        line(x + size * 1, y + size, x + size * 2, y + 0);
+        line(x + size * 2, y + 0, x + size * 3, y + size);
+        line(x + size * 3, y + size, x + size * 4, y + 0);
+        line(x + size * 4, y + 0, x + size * 5, y + size);
+        line(x + size * 5, y + size, x + size * 6, y + 0);
     }
 
     render() {
-        // body
-        fill(this.color);
-        arc(this.x + 16, this.y + 22, 24, 38, Math.PI, 0);
-        noStroke();
-        // feet
-        for (let i = 0; i < 3; i++) {
-            arc(this.x + 8 + i * 8 + this.blobDelta, this.y + 22, 8, 8, 0, Math.PI);
-        }
+        if (this.vulnerable) {
+            noStroke();
+            // body
+            fill(0, 0, 255);
+            arc(this.x + 16, this.y + 22, 24, 38, Math.PI, 0);
+            // feet
+            for (let i = 0; i < 3; i++) {
+                arc(this.x + 8 + i * 8 + this.blobDelta, this.y + 22, 8, 8, 0, Math.PI);
+            }
+            // eyes
+            fill(255, 255, 255);
+            rectMode(CENTER);
+            rect(this.x + 11, this.y + 12, 4, 4);
+            rect(this.x + 21, this.y + 12, 4, 4);
+            rectMode(CORNER);
+            this.mouth(3);
 
-        // eyes
-        fill(255, 255, 255);
-        ellipse(this.x + 11, this.y + 12, 8, 8);
-        ellipse(this.x + 21, this.y + 12, 8, 8);
 
-        // pupils looking in direction
-        fill(0);
-        if (this.dir == "left") {
-            ellipse(this.x + 9, this.y + 12, 4, 4);
-            ellipse(this.x + 19, this.y + 12, 4, 4);
-        } else if (this.dir == "right") {
-            ellipse(this.x + 13, this.y + 12, 4, 4);
-            ellipse(this.x + 23, this.y + 12, 4, 4);
-        } else if (this.dir == "up") {
-            ellipse(this.x + 11, this.y + 10, 4, 4);
-            ellipse(this.x + 21, this.y + 10, 4, 4);
         } else {
-            ellipse(this.x + 11, this.y + 14, 4, 4);
-            ellipse(this.x + 21, this.y + 14, 4, 4);
-        }
+            // body
+            fill(this.color);
+            arc(this.x + 16, this.y + 22, 24, 38, Math.PI, 0);
+            noStroke();
+            // feet
+            for (let i = 0; i < 3; i++) {
+                arc(this.x + 8 + i * 8 + this.blobDelta, this.y + 22, 8, 8, 0, Math.PI);
+            }
 
-        noFill();
-        stroke(255, 255, 255);
-        rect(this.x, this.y, 32, 32);
+            // eyes
+            fill(255, 255, 255);
+            ellipse(this.x + 11, this.y + 12, 8, 8);
+            ellipse(this.x + 21, this.y + 12, 8, 8);
+
+            // pupils looking in direction
+            fill(0);
+            if (this.dir == "left") {
+                ellipse(this.x + 9, this.y + 12, 4, 4);
+                ellipse(this.x + 19, this.y + 12, 4, 4);
+            } else if (this.dir == "right") {
+                ellipse(this.x + 13, this.y + 12, 4, 4);
+                ellipse(this.x + 23, this.y + 12, 4, 4);
+            } else if (this.dir == "up") {
+                ellipse(this.x + 11, this.y + 10, 4, 4);
+                ellipse(this.x + 21, this.y + 10, 4, 4);
+            } else {
+                ellipse(this.x + 11, this.y + 14, 4, 4);
+                ellipse(this.x + 21, this.y + 14, 4, 4);
+            }
+
+        }
     }
 }
 
@@ -202,36 +256,28 @@ class Blinky extends Ghost {
     }
 
     update() {
-        this.stateCD--;
-        super.updateFeetDir();
-        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
-            if (this.stateCD <= 0) {
+        if (this.vulnerable) {
+            // wait until we reach a new tile if vulnerability just switched
+            super.update();
+        } else {
+            this.stateCD--;
+            super.updateFeetDir();
+            if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+                super.stateUpdate();
+
+                // scatter mode blinky aims for the top right
                 if (this.mode == "scatter") {
-                    this.mode = "chase";
-                    this.stateCD = random(2, 6) * 60;
-
-                }
-                else if (this.mode == "chase") {
-                    this.mode = "scatter";
-                    this.stateCD = random(1, 3) * 60;
-                }
-            }
-
-            // scatter mode blinky aims for the top right
-            if (this.mode == "scatter") {
-                this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][18]);
-                if (this.path.length <  1) {
-                    // blinky is already there.. what do we do?
+                    this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][18]);
+                    if (this.path.length <  1) {
+                        // blinky is already there.. what do we do?
+                        this.chase();
+                    }
+                    super.pickPathDir();
+                    this.updateNewTileEntered();
+                } else if (this.mode == "chase") {
+                    // blinky follows the player aggressively
                     this.chase();
                 }
-                super.pickPathDir();
-                this.updateNewTileEntered();
-            } else if (this.mode == "chase") {
-                // blinky follows the player aggressively
-                this.chase();
-            } else {
-                // flee mode just inverts the direction and randomizes ghost pathing
-                super.randomPathAI();
             }
         }
     }
@@ -243,7 +289,6 @@ class Pinky extends Ghost {
     Pinky is an ambush ghost. It predicts where pacman will be in 2 steps, and then goes there
     */
     constructor(col, row) {
-        console.log("pinky an the brain");
         super(col, row, color(255, 168, 223));
         let coord = this.dimensionsInFrontOfPlayer();
         this.r = coord.r;
@@ -275,7 +320,6 @@ class Pinky extends Ghost {
             col = constrain(col + i, 0, 19);
             // check if this tile is walkable and a path to it exists
             while (true) {
-                console.log(row, col);
                 path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[row][col]);
                 if (path.length > 0)
                     break;
@@ -324,38 +368,28 @@ class Pinky extends Ghost {
     }
 
     update() {
-        this.stateCD--;
-        super.updateFeetDir();
-        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
-            if (this.stateCD <= 0) {
+        if (this.vulnerable) {
+            // wait until we reach a new tile if vulnerability just switched
+            super.update();
+        } else {
+            this.stateCD--;
+            super.updateFeetDir();
+            if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+                super.stateUpdate();
+                // scatter mode pinky aims for the top left
                 if (this.mode == "scatter") {
-                    this.mode = "chase";
-                    this.stateCD = random(2, 6) * 60;
-
-                }
-                else if (this.mode == "chase") {
-                    this.mode = "scatter";
-                    this.stateCD = random(1, 3) * 60;
-                }
-            }
-
-            // scatter mode pinky aims for the top left
-            if (this.mode == "scatter") {
-                this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][2]);
-                if (this.path.length <  1) {
-                    // pinky is already there.. what do we do?
+                    this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][2]);
+                    if (this.path.length <  1) {
+                        // pinky is already there.. what do we do?
+                        this.chase();
+                    }
+                    super.pickPathDir();
+                    this.updateNewTileEntered();
+                } else if (this.mode == "chase") {
+                    // blinky attempts to abush the player in chase mode
                     this.chase();
                 }
-                super.pickPathDir();
-                this.updateNewTileEntered();
-            } else if (this.mode == "chase") {
-                // blinky attempts to abush the player in chase mode
-                this.chase();
-            } else {
-                // flee mode just inverts the direction and randomizes ghost pathing
-                super.randomPathAI();
             }
-
         }
     }
 }
@@ -427,14 +461,20 @@ class Inky extends Ghost {
     }
 
     update() {
-        super.updateFeetDir();
-        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
-            if (this.path.length > 0) {
-                super.pickPathDir();
-                this.updateNewTileEntered();
-            }
-            while (this.path.length < 1) {
-                this.chase();
+        if (this.vulnerable) {
+            // wait until we reach a new tile if vulnerability just switched
+            super.update();
+            this.path = [];
+        } else {
+            super.updateFeetDir();
+            if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+                if (this.path.length > 0) {
+                    super.pickPathDir();
+                    this.updateNewTileEntered();
+                }
+                while (this.path.length < 1) {
+                    this.chase();
+                }
             }
         }
     }
@@ -466,32 +506,39 @@ class Clyde extends Ghost {
     }
 
     update() {
-        super.updateFeetDir();
-        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
-            // take manhattan distance
-            if ((Math.abs(this.x - player.x) + Math.abs(this.y - player.y)) < 8 * 32) {
-                this.mode = "scatter";
-            } else {
-                this.mode = "chase";
-            }
-
-            // scatter mode Clyde aims for the bot left
-            if (this.mode == "scatter") {
-                this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[19][2]);
-                if (this.path.length <  2) {
-                    // blinky is already there.. what do we do?
-                    this.chase();
+        if (this.vulnerable) {
+            // wait until we reach a new tile if vulnerability just switched
+            super.update();
+        } else {
+            super.updateFeetDir();
+            if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+                // take manhattan distance
+                if ((Math.abs(this.x - player.x) + Math.abs(this.y - player.y)) < 8 * 32) {
+                    this.mode = "scatter";
                 } else {
-                    super.pickPathDir();
-                    this.updateNewTileEntered();
+                    this.mode = "chase";
                 }
-            } else if (this.mode == "chase") {
-                // blinky follows the player aggressively
-                this.chase();
-            } else {
-                // flee mode just inverts the direction and randomizes ghost pathing
-                super.randomPathAI();
+
+                // scatter mode Clyde aims for the bot left
+                if (this.mode == "scatter") {
+                    this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[19][2]);
+                    if (this.path.length <  2) {
+                        // Clyde is already there.. what do we do?
+                        this.chase();
+                    } else {
+                        super.pickPathDir();
+                        this.updateNewTileEntered();
+                    }
+                } else if (this.mode == "chase") {
+                    // Clyde follows the player aggressively
+                    this.chase();
+                }
             }
         }
     }
 }
+
+// game over
+// reset level on win
+// blinky getting faster over time?
+// scatter should make the ghost patrol the corner instead of just path there
