@@ -111,6 +111,10 @@ class Pacman {
             } else if (tileset.map[row][col].name == "berry") {
                 tileset.map[row][col].name = "space";
                 gameScore += 45;
+                console.log("ying");
+                for (let i = 0; i < ghosts.length; i++) {
+                    ghosts[i].vulnerable = true;
+                }
             }
 
             // if pacman reaches the portal, he should come out the other side
