@@ -1,6 +1,6 @@
 class Pacman {
     constructor(col, row) {
-        this.dir = "down";
+        this.dir = "left";
         this.lastDir = this.dir;
         this.x = tileset.tileW * col;
         this.y = tileset.tileH * row;
@@ -107,16 +107,20 @@ class Pacman {
             let col = this.x / tileset.tileW;
             if (tileset.map[row][col].name == "fruit") {
                 tileset.map[row][col].name = "space";
+                gameScore += 15;
+            } else if (tileset.map[row][col].name == "berry") {
+                tileset.map[row][col].name = "space";
+                gameScore += 45;
             }
 
             // if pacman reaches the portal, he should come out the other side
             if (col == 0 && this.dir == "left") {
                 this.x = 640;
-                this.y = 288;
+                this.y = 320;
                 this.mouthSetDir();
             } else if (col == 20 && this.dir == "right") {
                 this.x = 0;
-                this.y = 288;
+                this.y = 320;
                 this.mouthSetDir();
             }
 
