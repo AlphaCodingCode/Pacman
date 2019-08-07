@@ -22,7 +22,6 @@ class Ghost {
         let dirs = ["up", "down", "left", "right"];
         for (let i = 0; i < dirs.length; i++) {
             let tile = this.getTileInDir(dirs[i]);
-            console.log(tile);
             if (tileset.map[tile.r][tile.c].name != "brick")
                 openSpaces.push(dirs[i]);
         }
@@ -35,6 +34,28 @@ class Ghost {
             let rand = round(random(0, openSpaces.length - 1));
             this.dir = openSpaces[rand];
             this.path = this.getTileInDir(rand);
+        }
+    }
+
+    scatter() {
+        return;
+    }
+
+    contactedPacman() {
+        // if in vulnerable state, set to eaten state and path to the house
+        if (this.vulnerable) {
+            this.path = [];
+            this.mode = "scatter";
+            this.stateCD = this.stateCD = random(2, 6) * 60;
+            this.x = 10 * tileset.tileW;
+            this.y = 10 * tileset.tileH;
+            this.vulnerable = false;
+            this.vulnerableTimer = 5 * 60;
+            this.scatter();
+            gameScore += 200;
+        } else {
+            // pac man has come into contact with an active ghost. Game over
+            GAMEOVER = true;
         }
     }
 
@@ -151,16 +172,21 @@ class Ghost {
     }
 
     update() {
-        this.updateFeetDir();
-        this.vulnerableTimer--;
-        // ghost has reached a new tile's center
-        if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
-            if (this.vulnerableTimer <= 0) {
-                this.vulnerable = false;
-                this.vulnerableTimer = 5 * 60;
-                this.path = [];
+        if (this.vulnerable) {
+            this.updateFeetDir();
+            this.vulnerableTimer--;
+            // ghost has reached a new tile's center
+            if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+                if (this.vulnerableTimer <= 0) {
+                    this.vulnerable = false;
+                    this.vulnerableTimer = 5 * 60;
+                    this.path = [];
+                }
+                this.newTileEntered();
             }
-            this.newTileEntered();
+        } else {
+            this.updateFeetDir();
+            return;
         }
     }
 
@@ -194,8 +220,6 @@ class Ghost {
             rect(this.x + 21, this.y + 12, 4, 4);
             rectMode(CORNER);
             this.mouth(3);
-
-
         } else {
             // body
             fill(this.color);
@@ -250,7 +274,21 @@ class Blinky extends Ghost {
     }
 
     chase() {
-        this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[round(player.y / tileset.tileH)][round(player.x / tileset.tileW)]);
+        try {
+            this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[round(player.y / tileset.tileH)][round(player.x / tileset.tileW)]);
+            super.pickPathDir();
+            this.updateNewTileEntered();
+        } catch(e) {
+            console.log("can't find path");
+        }
+    }
+
+    scatter() {
+        this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][18]);
+        if (this.path.length <  1) {
+            // blinky is already there.. what do we do?
+            this.chase();
+        }
         super.pickPathDir();
         this.updateNewTileEntered();
     }
@@ -267,13 +305,7 @@ class Blinky extends Ghost {
 
                 // scatter mode blinky aims for the top right
                 if (this.mode == "scatter") {
-                    this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][18]);
-                    if (this.path.length <  1) {
-                        // blinky is already there.. what do we do?
-                        this.chase();
-                    }
-                    super.pickPathDir();
-                    this.updateNewTileEntered();
+                    this.scatter();
                 } else if (this.mode == "chase") {
                     // blinky follows the player aggressively
                     this.chase();
@@ -367,6 +399,19 @@ class Pinky extends Ghost {
         this.updateNewTileEntered();
     }
 
+    scatter() {
+        this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][2]);
+        if (this.path.length <  1) {
+            // pinky is already there.. what do we do?
+            this.chase();
+            if (this.path.length < 1) {
+                this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[round(player.y / tileset.tileH)][round(player.x / tileset.tileW)]);
+            }
+        }
+        super.pickPathDir();
+        this.updateNewTileEntered();
+    }
+
     update() {
         if (this.vulnerable) {
             // wait until we reach a new tile if vulnerability just switched
@@ -378,13 +423,7 @@ class Pinky extends Ghost {
                 super.stateUpdate();
                 // scatter mode pinky aims for the top left
                 if (this.mode == "scatter") {
-                    this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][2]);
-                    if (this.path.length <  1) {
-                        // pinky is already there.. what do we do?
-                        this.chase();
-                    }
-                    super.pickPathDir();
-                    this.updateNewTileEntered();
+                    this.scatter();
                 } else if (this.mode == "chase") {
                     // blinky attempts to abush the player in chase mode
                     this.chase();
@@ -460,11 +499,15 @@ class Inky extends Ghost {
         this.updateNewTileEntered();
     }
 
+    scatter() {
+        this.chase();
+    }
+
     update() {
         if (this.vulnerable) {
-            // wait until we reach a new tile if vulnerability just switched
             super.update();
             this.path = [];
+
         } else {
             super.updateFeetDir();
             if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
@@ -505,6 +548,17 @@ class Clyde extends Ghost {
         this.updateNewTileEntered();
     }
 
+    scatter() {
+        this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[19][2]);
+        if (this.path.length <  2) {
+            // Clyde is already there.. what do we do?
+            this.chase();
+        } else {
+            super.pickPathDir();
+            this.updateNewTileEntered();
+        }
+    }
+
     update() {
         if (this.vulnerable) {
             // wait until we reach a new tile if vulnerability just switched
@@ -521,14 +575,7 @@ class Clyde extends Ghost {
 
                 // scatter mode Clyde aims for the bot left
                 if (this.mode == "scatter") {
-                    this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[19][2]);
-                    if (this.path.length <  2) {
-                        // Clyde is already there.. what do we do?
-                        this.chase();
-                    } else {
-                        super.pickPathDir();
-                        this.updateNewTileEntered();
-                    }
+                    this.scatter();
                 } else if (this.mode == "chase") {
                     // Clyde follows the player aggressively
                     this.chase();
@@ -537,8 +584,3 @@ class Clyde extends Ghost {
         }
     }
 }
-
-// game over
-// reset level on win
-// blinky getting faster over time?
-// scatter should make the ghost patrol the corner instead of just path there
