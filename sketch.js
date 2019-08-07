@@ -2,6 +2,7 @@
 let tileNames = ["brick", "space", "fruit", "berry"];
 let tileset;
 let gameScore = 0;
+let GAMEOVER = false;
 let worldMap = [
 ["space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space"],
 ["space", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "space"],
@@ -49,12 +50,24 @@ function setup() {
     ghosts.push(new Pinky(10, 10));
     ghosts.push(new Inky(10, 10));
     ghosts.push(new Clyde(10, 10));
+    frameRate(60);
+    console.log("fps 60");
 }
 
 /*
     The draw function is executed once per frame.
 */
 function draw() {
+    if (GAMEOVER) {
+        // show the gameover screen
+        background(0);
+        fill(255, 0, 0);
+        textSize(40);
+        textAlign(CENTER);
+        text("GAME OVER!", width / 2, height / 2);
+        return;
+    }
+
     // Update
     player.update();
     for (let i = 0; i < ghosts.length; i++) {
@@ -74,41 +87,4 @@ function draw() {
     stroke(0);
     text("Score: " + gameScore, 20, height - 20);
     fill(255, 255, 255);
-    stroke(0);
-
-    // fill(255);
-    // rect(18 * tileset.tileW, 2 * tileset.tileH, 32, 32);
-    // for (let i = 0; i < ghosts[1].path.length; i++) {
-    //     fill(0, 100, 0, 100);
-    //     rect(ghosts[1].path[i].x, ghosts[1].path[i].y, 32, 32);
-    // }
-    // try {
-    //     fill(200, 0, 0);
-    //     rect(ghosts[1].destTile.x * tileset.tileW, ghosts[1].destTile.y * tileset.tileH, 32, 32);
-    // } catch(e) {
-    //     console.log("reee");
-    // }
-    // textAlign(CENTER);
-    // textSize(20);
-    // let row = round(ghosts[1].y / tileset.tileH);
-    // let col = round(ghosts[1].x / tileset.tileW);
-    // fill(255);
-    // text("(" + tileset.map[row][col].x + "," + tileset.map[row][col].y + ")", ghosts[1].x, ghosts[1].y);
-    // noFill();
-    // stroke(255, 0, 0);
-    // rect(col * tileset.tileW, row * tileset.tileH, 32, 32);
-}
-
-let t = false;
-function mouseClicked() {
-    //tileset.handleClick();
-    if (t)
-        loop();
-    else
-        noLoop();
-    t = !t;
-}
-
-function mouseDragged() {
-    //tileset.handleDrag();
 }
