@@ -1,8 +1,16 @@
-// Any global variables can be defined up here
-let tileNames = ["brick", "space", "fruit", "berry"];
-let tileset;
+// Game state globals
 let gameScore = 0;
 let GAMEOVER = false;
+
+// entity globals
+let player;
+let ghosts = [];
+let blinkyIndex = 0;
+
+// Map related globals
+let tileNames = ["brick", "space", "fruit", "berry"];
+let tileset;
+let disallow = ["brick"];
 let worldMap = [
 ["space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space"],
 ["space", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "brick", "space"],
@@ -30,28 +38,24 @@ let worldMap = [
 ["space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space", "space"],
 ];
 
-let disallow = ["brick"];
 
-let player;
-let ghosts = [];
-let blinkyIndex = 0;
 
 function preload() {
+    // load the map
     tileset = new Tileset("imgs/pacman_tileset.png", 32, 32, tileNames);
     tileset.setMap(worldMap);
     tileset.initBlockedList(disallow);
 }
 
+
 function setup() {
     createCanvas(21 * 32, 24 * 32);
+    // instanciate entities
     player = new Pacman(10, 12);
-    ghosts.push(new Blinky(10, 10));
-    blinkyIndex = 0;
+    ghosts.push(new Blinky(10, 10)); // blinky as ghosts array index 0
     ghosts.push(new Pinky(10, 10));
     ghosts.push(new Inky(10, 10));
     ghosts.push(new Clyde(10, 10));
-    frameRate(60);
-    console.log("fps 60");
 }
 
 /*
@@ -59,13 +63,7 @@ function setup() {
 */
 function draw() {
     if (GAMEOVER) {
-        // show the gameover screen
-        background(0);
-        fill(255, 0, 0);
-        textSize(40);
-        textAlign(CENTER);
-        text("GAME OVER!", width / 2, height / 2);
-        return;
+        gameOverScreen()
     }
 
     // Update
@@ -86,5 +84,13 @@ function draw() {
     textSize(30);
     stroke(0);
     text("Score: " + gameScore, 20, height - 20);
-    fill(255, 255, 255);
+}
+
+function gameOverScreen() {
+    background(0);
+    fill(255, 0, 0);
+    textSize(40);
+    textAlign(CENTER);
+    text("GAME OVER!", width / 2, height / 2);
+    return;
 }
