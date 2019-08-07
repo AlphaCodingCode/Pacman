@@ -92,7 +92,7 @@ class Pacman {
         if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
 
             // change pacman's direction if a new direction was inputted
-            if ((this.dir != this.lastDir)) {
+            if (this.dir != this.lastDir) {
                 let tile = this.getTileInDir(this.lastDir);
                 if (tileset.map[tile.r][tile.c].name != "brick") {
                     this.dir = this.lastDir;
@@ -111,9 +111,14 @@ class Pacman {
             } else if (tileset.map[row][col].name == "berry") {
                 tileset.map[row][col].name = "space";
                 gameScore += 45;
-                console.log("ying");
                 for (let i = 0; i < ghosts.length; i++) {
                     ghosts[i].vulnerable = true;
+                }
+            }
+            // check contact with a ghost
+            for (let i = 0; i < ghosts.length; i++) {
+                if (dist(this.x + 16, this.y + 16, ghosts[i].x + 16, ghosts[i].y + 16) <= 32) {
+                    ghosts[i].contactedPacman();
                 }
             }
 
@@ -159,7 +164,5 @@ class Pacman {
         fill(200, 200, 0);
         arc(this.x + 16, this.y + 16, 32, 32, this.mouthTop, this.mouthBot, PIE);
         noFill();
-        stroke(255, 0, 0);
-        rect(this.x, this.y, 32, 32);
     }
 }
