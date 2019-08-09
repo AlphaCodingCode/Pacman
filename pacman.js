@@ -94,7 +94,7 @@ class Pacman {
             // change pacman's direction if a new direction was inputted
             if (this.dir != this.lastDir) {
                 let tile = this.getTileInDir(this.lastDir);
-                if (tileset.map[tile.r][tile.c].name != "brick") {
+                if (tile.name != "brick") {
                     this.dir = this.lastDir;
                     // mouth facing direction needs to re-adjust to facing direction
                     this.mouthSetDir();
@@ -115,12 +115,6 @@ class Pacman {
                     ghosts[i].vulnerable = true;
                 }
             }
-            // check contact with a ghost
-            for (let i = 0; i < ghosts.length; i++) {
-                if (dist(this.x + 16, this.y + 16, ghosts[i].x + 16, ghosts[i].y + 16) <= 32) {
-                    ghosts[i].contactedPacman();
-                }
-            }
 
             // if pacman reaches the portal, he should come out the other side
             if (col == 0 && this.dir == "left") {
@@ -135,14 +129,19 @@ class Pacman {
 
             // check that in the current direction, pacman isn't running into a wall, if he is stop him
             let tile = this.getTileInDir(this.dir);
-            if (tileset.map[tile.r][tile.c].name != "brick") {
+            if (tile.name != "brick") {
                 this.speed = 2;
             } else {
                 this.speed = 0;
             }
         }
 
-
+        // check contact with a ghost
+        for (let i = 0; i < ghosts.length; i++) {
+            if (dist(this.x, this.y, ghosts[i].x, ghosts[i].y) <= 16) {
+                ghosts[i].contactedPacman();
+            }
+        }
     }
 
     getTileInDir(dir) {
@@ -157,7 +156,7 @@ class Pacman {
         } else {
             col++;
         }
-        return {c : col, r : row};
+        return tileset.map[col][row];
     }
 
     render() {
