@@ -263,19 +263,20 @@ class Blinky extends Ghost {
 
     constructor(col, row) {
         super(col, row, color(200, 0, 0));
-        this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[round(player.y / tileset.tileH)][round(player.x / tileset.tileW)]);
+        this.path = tileset.shortestPath(tileset.map[col][row], tileset.map[2][18]);
         super.pickPathDir();
     }
 
     updateNewTileEntered() {
         this.path.splice(0, 1);
-        if (super.takePortal())
-            return;
+        super.takePortal();
     }
 
     chase() {
+        let pacmanTile = tileset.map[round(player.y / tileset.tileH)][round(player.x / tileset.tileW)];
+        let blinkyTile = tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)];
         try {
-            this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[round(player.y / tileset.tileH)][round(player.x / tileset.tileW)]);
+            this.path = tileset.shortestPath(blinkyTile, pacmanTile);
             super.pickPathDir();
             this.updateNewTileEntered();
         } catch(e) {
@@ -284,9 +285,10 @@ class Blinky extends Ghost {
     }
 
     scatter() {
-        this.path = tileset.shortestPath(tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)], tileset.map[2][18]);
+        let blinkyTile = tileset.map[round(this.y / tileset.tileH)][round(this.x / tileset.tileW)];
+        this.path = tileset.shortestPath(blinkyTile, tileset.map[2][18]);
+        // blinky is already at it's corner. Enter chase mode
         if (this.path.length <  1) {
-            // blinky is already there.. what do we do?
             this.chase();
         }
         super.pickPathDir();
@@ -295,22 +297,25 @@ class Blinky extends Ghost {
 
     update() {
         if (this.vulnerable) {
-            // wait until we reach a new tile if vulnerability just switched
+            // if vulnerable, use the parent's update - all ghosts behave the same when vulnerable
             super.update();
         } else {
             this.stateCD--;
             super.updateFeetDir();
+
+            // blinky entered a new tile
             if  ((this.x % tileset.tileW == 0) && (this.y % tileset.tileH == 0)) {
+                // should see if it needs to change between chase and scatter mode
                 super.stateUpdate();
 
-                // scatter mode blinky aims for the top right
+                // call method based on mode
                 if (this.mode == "scatter") {
                     this.scatter();
                 } else if (this.mode == "chase") {
-                    // blinky follows the player aggressively
                     this.chase();
                 }
             }
+
         }
     }
 }
